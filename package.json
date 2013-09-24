@@ -1,0 +1,12 @@
+{
+  "name": "node-linkedlist",
+  "version": "0.0.0",
+  "description": "A native implementation of linked list for node.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": "",
+  "author": "hisanori",
+  "license": "BSD"
+}
