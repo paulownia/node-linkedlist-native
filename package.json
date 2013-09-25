@@ -1,12 +1,12 @@
 {
-  "name": "node-linkedlist",
+  "name": "linkedlist",
   "version": "0.0.0",
   "description": "A native implementation of linked list for node.js",
   "main": "index.js",
   "scripts": {
     "test": "mocha"
   },
-  "repository": "",
+  "repository": "https://github.com/paulownia/node-linkedlist.git",
   "author": "hisanori",
   "license": "BSD"
 }
