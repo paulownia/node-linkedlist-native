@@ -43,6 +43,8 @@ void LinkedList::Init(Handle<Object> exports) {
 	tpl->PrototypeTemplate()->Set(String::NewSymbol("removeFirst"), FunctionTemplate::New(RemoveFirst)->GetFunction());
 	tpl->PrototypeTemplate()->Set(String::NewSymbol("removeLast"), FunctionTemplate::New(RemoveLast)->GetFunction());
 
+	tpl->PrototypeTemplate()->Set(String::NewSymbol("forEach"), FunctionTemplate::New(ForEach)->GetFunction());
+	
 	Persistent<Function> constructor = Persistent<Function>::New(tpl->GetFunction());
 
 	exports->Set(String::NewSymbol("LinkedList"), constructor);
@@ -76,6 +78,33 @@ void LinkedList::Push(const Handle<Value>& value) {
 	length++;
 	tail = entry;
 }	
+
+Handle<Value> LinkedList::ForEach(const Arguments& args) {
+	HandleScope scope;
+	LinkedList* obj = ObjectWrap::Unwrap<LinkedList>(args.This());
+	
+	if (args.Length() == 0 || !args[0]->IsFunction()) {
+		return Undefined();
+	}
+
+	Local<Object> self = args.This();
+
+	Local<Object> context = (args.Length() > 1) ? Local<Object>::Cast(args[1]) : v8::Context::GetCurrent()->Global();
+	
+	Local<Function> callback = Local<Function>::Cast(args[0]);
+
+	int index = 0;
+	Entry* current = obj->head;
+	while (current != nullptr) {
+		Handle<Value> callbackArgs[3] = {
+			current->value, Integer::New(index++), self
+		};
+		callback->Call(context, 3, callbackArgs);
+		current = current->next;
+	}
+	return Undefined();
+}
+
 
 Handle<Value> LinkedList::AddFirst(const Arguments& args) {
 	HandleScope scope;

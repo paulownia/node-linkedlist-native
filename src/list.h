@@ -74,6 +74,11 @@ class LinkedList : public node::ObjectWrap {
 		 */
 		static v8::Handle<v8::Value> GetLast(v8::Local<v8::String> name,  const v8::AccessorInfo& info);
 
+		/**
+		 * forEach
+		 */
+		static v8::Handle<v8::Value> ForEach(const v8::Arguments& args);
+		
 		/** First Item of the list */
 		Entry* head;
 
