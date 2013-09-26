@@ -42,6 +42,11 @@ void LinkedList::Init(Handle<Object> exports) {
 	tpl->PrototypeTemplate()->Set(String::NewSymbol("addLast"), FunctionTemplate::New(AddLast)->GetFunction());
 	tpl->PrototypeTemplate()->Set(String::NewSymbol("removeFirst"), FunctionTemplate::New(RemoveFirst)->GetFunction());
 	tpl->PrototypeTemplate()->Set(String::NewSymbol("removeLast"), FunctionTemplate::New(RemoveLast)->GetFunction());
+	
+	tpl->PrototypeTemplate()->Set(String::NewSymbol("unshift"), FunctionTemplate::New(AddFirst)->GetFunction());
+	tpl->PrototypeTemplate()->Set(String::NewSymbol("push"), FunctionTemplate::New(AddLast)->GetFunction());
+	tpl->PrototypeTemplate()->Set(String::NewSymbol("shift"), FunctionTemplate::New(RemoveFirst)->GetFunction());
+	tpl->PrototypeTemplate()->Set(String::NewSymbol("pop"), FunctionTemplate::New(RemoveLast)->GetFunction());
 
 	tpl->PrototypeTemplate()->Set(String::NewSymbol("forEach"), FunctionTemplate::New(ForEach)->GetFunction());
 	
