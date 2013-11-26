@@ -1,4 +1,4 @@
-node-linkedlist
+node-linkedlist-native
 ======
 
 A native implemantation of linked list for node.js. 
@@ -11,7 +11,7 @@ Prerequisites
 ## To install
 
     export CXXFLAGS="-std=c++11"
-    npm install git://github.com/paulownia/node-linkedlist.git
+    npm install git://github.com/paulownia/node-linkedlist-native.git
 
 
 ## To build
