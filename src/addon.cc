@@ -2,10 +2,15 @@
 #include <node.h>
 #include "list.h"
 
-using namespace v8;
+namespace list {
 
-void InitAll(Handle<Object> exports) {
-	LinkedList::Init(exports);
+	using v8::Local;
+	using v8::Object;
+
+
+	void InitAll(Local<Object> exports) {
+		LinkedList::Init(exports);
+	}
+
+	NODE_MODULE(addon, InitAll)
 }
-
-NODE_MODULE(addon, InitAll)

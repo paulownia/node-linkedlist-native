@@ -2,206 +2,270 @@
 #include "list.h"
 #include <iostream>
 
-using namespace v8;
+namespace list {
+
+	using v8::Object;
+	using v8::Function;
+	using v8::Persistent;
+	using v8::Isolate;
+	using v8::Local;
+	using v8::FunctionTemplate;
+	using v8::FunctionCallbackInfo;
+	using v8::PropertyCallbackInfo;
+	using v8::Value;
+	using v8::String;
+	using v8::Integer;
+	using v8::HandleScope;
+	using v8::Context;
+	using v8::Null;
+	using v8::Persistent;
+	using v8::UniquePersistent;
+	using v8::External;
+
+	Entry::Entry() {
+		prev = nullptr;
+		next = nullptr;
+	};
+
+	Entry::~Entry() {
+	};
 
 
-Entry::Entry() {
-	prev = nullptr;
-	next = nullptr;
-};
+	LinkedList::LinkedList() {
+		head = nullptr;
+		tail = nullptr;
+		length = 0;
+	};
 
-Entry::~Entry() {
-	value.Dispose();
-};
+	LinkedList::~LinkedList() {
+		while (head != nullptr) {
+			Entry* current = head;
+			head = head->next;
+			delete current;
+		}
+	};
 
-LinkedList::LinkedList() {
-	head = nullptr;
-	tail = nullptr;
-	length = 0;
-};
+	void LinkedList::Init(Local<Object> exports) {
+		Isolate* isolate = exports->GetIsolate();
 
-LinkedList::~LinkedList() {
-	while (head != nullptr) {
-		Entry* current = head;
-		head = head->next;
-		delete current;
+		Local<FunctionTemplate> tpl = FunctionTemplate::New(isolate, New);
+
+		tpl->SetClassName(String::NewFromUtf8(isolate, "LinkedList"));
+		tpl->InstanceTemplate()->SetInternalFieldCount(3);
+
+
+		tpl->InstanceTemplate()->SetAccessor(String::NewFromUtf8(isolate, "length"), GetLength);
+		tpl->InstanceTemplate()->SetAccessor(String::NewFromUtf8(isolate, "first"), GetFirst);
+		tpl->InstanceTemplate()->SetAccessor(String::NewFromUtf8(isolate, "last"), GetLast);
+
+
+		NODE_SET_PROTOTYPE_METHOD(tpl, "addFirst", AddFirst);
+		NODE_SET_PROTOTYPE_METHOD(tpl, "addLast", AddLast);
+		NODE_SET_PROTOTYPE_METHOD(tpl, "removeFirst", RemoveFirst);
+		NODE_SET_PROTOTYPE_METHOD(tpl, "removeLast", RemoveLast);
+
+		NODE_SET_PROTOTYPE_METHOD(tpl, "unshift", AddFirst);
+		NODE_SET_PROTOTYPE_METHOD(tpl, "push", AddLast);
+		NODE_SET_PROTOTYPE_METHOD(tpl, "shift", RemoveFirst);
+		NODE_SET_PROTOTYPE_METHOD(tpl, "pop", RemoveLast);
+
+		NODE_SET_PROTOTYPE_METHOD(tpl, "forEach", ForEach);
+
+		exports->Set(String::NewFromUtf8(isolate, "LinkedList"), tpl->GetFunction());
 	}
-};
 
-void LinkedList::Init(Handle<Object> exports) {
+	void LinkedList::New(const FunctionCallbackInfo<Value>& args) {
+		Isolate* isolate = args.GetIsolate();
+		HandleScope scope(isolate);
 
-	Local<FunctionTemplate> tpl = FunctionTemplate::New(New);
-	
-	tpl->SetClassName(String::NewSymbol("LinkedList"));
-	tpl->InstanceTemplate()->SetInternalFieldCount(3);
-	tpl->InstanceTemplate()->SetAccessor(String::NewSymbol("length"), GetLength);
-	tpl->InstanceTemplate()->SetAccessor(String::NewSymbol("first"), GetFirst);
-	tpl->InstanceTemplate()->SetAccessor(String::NewSymbol("last"), GetLast);
+		if (args.IsConstructCall()) {
+			LinkedList* linkedList = new LinkedList();
+			linkedList->Wrap(args.This());
 
-	tpl->PrototypeTemplate()->Set(String::NewSymbol("addFirst"), FunctionTemplate::New(AddFirst)->GetFunction());
-	tpl->PrototypeTemplate()->Set(String::NewSymbol("addLast"), FunctionTemplate::New(AddLast)->GetFunction());
-	tpl->PrototypeTemplate()->Set(String::NewSymbol("removeFirst"), FunctionTemplate::New(RemoveFirst)->GetFunction());
-	tpl->PrototypeTemplate()->Set(String::NewSymbol("removeLast"), FunctionTemplate::New(RemoveLast)->GetFunction());
-	
-	tpl->PrototypeTemplate()->Set(String::NewSymbol("unshift"), FunctionTemplate::New(AddFirst)->GetFunction());
-	tpl->PrototypeTemplate()->Set(String::NewSymbol("push"), FunctionTemplate::New(AddLast)->GetFunction());
-	tpl->PrototypeTemplate()->Set(String::NewSymbol("shift"), FunctionTemplate::New(RemoveFirst)->GetFunction());
-	tpl->PrototypeTemplate()->Set(String::NewSymbol("pop"), FunctionTemplate::New(RemoveLast)->GetFunction());
+			int len = args.Length();
+			for (int i = 0; i < len; i++) {
+				linkedList->Push(isolate, args[i]);
+			}
 
-	tpl->PrototypeTemplate()->Set(String::NewSymbol("forEach"), FunctionTemplate::New(ForEach)->GetFunction());
-	
-	Persistent<Function> constructor = Persistent<Function>::New(tpl->GetFunction());
+			args.GetReturnValue().Set(args.This());
+		}
+	}
 
-	exports->Set(String::NewSymbol("LinkedList"), constructor);
+	void LinkedList::Push(Isolate* isolate, Local<Value> value) {
+		Entry* entry = new Entry();
+		entry->value.Reset(isolate, value);
+
+		if (head == nullptr) {
+			head = entry;
+		}
+		if (tail != nullptr) {
+			tail->next = entry;
+			entry->prev = tail;
+		}
+		length++;
+		tail = entry;
+	}
+
+	void LinkedList::ForEach(const FunctionCallbackInfo<Value>& args) {
+		Isolate* isolate = args.GetIsolate();
+		HandleScope scope(isolate);
+
+		LinkedList* obj = ObjectWrap::Unwrap<LinkedList>(args.Holder());
+
+		if (args.Length() == 0 || !args[0]->IsFunction()) {
+			return;
+		}
+
+		Local<Object> self = args.This();
+
+		Local<Function> callback = Local<Function>::Cast(args[0]);
+
+		Local<Value> context = args.Length() > 1 ? args[1] : Local<Value>::Cast(Null(isolate));
+
+		int index = 0;
+		Entry* current = obj->head;
+		while (current != nullptr) {
+			Local<Value> callbackArgs[3] = {
+				Local<Value>::New(isolate, current->value),
+				Integer::New(isolate, index++),
+				self
+			};
+
+			callback->Call(context, 3, callbackArgs);
+			current = current->next;
+		}
+	}
+
+	void LinkedList::AddFirst(const FunctionCallbackInfo<Value>& args) {
+		Isolate* isolate = args.GetIsolate();
+		LinkedList* obj = ObjectWrap::Unwrap<LinkedList>(args.Holder());
+
+		if (args.Length() == 0) {
+			return;
+		}
+
+		Entry* entry = new Entry();
+		entry->value.Reset(isolate, args[0]);
+
+		if (obj->tail == nullptr) {
+			obj->tail = entry;
+		}
+		if (obj->head != nullptr) {
+			obj->head->prev = entry;
+			entry->next = obj->head;
+		}
+		obj->head = entry;
+
+		obj->length++;
+	}
+
+	void LinkedList::AddLast(const FunctionCallbackInfo<Value>& args) {
+		Isolate* isolate = args.GetIsolate();
+		LinkedList* obj = ObjectWrap::Unwrap<LinkedList>(args.Holder());
+
+		if (args.Length() == 0) {
+			return;
+		}
+
+		Entry* entry = new Entry();
+		entry->value.Reset(isolate, args[0]);
+
+		if (obj->head == nullptr) {
+			obj->head = entry;
+		}
+
+		if (obj->tail != nullptr) {
+			obj->tail->next = entry;
+			entry->prev = obj->tail;
+		}
+
+		obj->tail = entry;
+
+		obj->length++;
+	}
+
+	void LinkedList::RemoveFirst(const FunctionCallbackInfo<Value>& args) {
+		Isolate* isolate = args.GetIsolate();
+		HandleScope scope(isolate);
+
+		LinkedList* obj = ObjectWrap::Unwrap<LinkedList>(args.Holder());
+
+		Entry* oldHead = obj->head;
+		if (oldHead == nullptr) {
+			return;
+		}
+
+		if (oldHead->next == nullptr) {
+			obj->head = nullptr;
+		} else {
+			obj->head = oldHead->next;
+			obj->head->prev = nullptr;
+		}
+		obj->length--;
+
+		Local<Value> ret = Local<Value>::New(isolate, oldHead->value);
+		args.GetReturnValue().Set(ret);
+
+		delete oldHead;
+	}
+
+	void LinkedList::RemoveLast(const FunctionCallbackInfo<Value>& args) {
+		Isolate* isolate = args.GetIsolate();
+		HandleScope scope(isolate);
+
+		LinkedList* obj = ObjectWrap::Unwrap<LinkedList>(args.Holder());
+
+		Entry* oldTail = obj->tail;
+		if (oldTail == nullptr) {
+			return;
+		}
+
+		if (oldTail->prev == nullptr) {
+			obj->tail = nullptr;
+		} else {
+			obj->tail = oldTail->prev;
+			obj->tail->next = nullptr;
+		}
+		obj->length--;
+
+		Local<Value> ret = Local<Value>::New(isolate, oldTail->value);
+		args.GetReturnValue().Set(ret);
+
+		delete oldTail;
+	}
+
+	void LinkedList::GetLength(Local<String> property, const PropertyCallbackInfo<Value>& args) {
+		Isolate* isolate = args.GetIsolate();
+		HandleScope scope(isolate);
+
+		LinkedList* obj = ObjectWrap::Unwrap<LinkedList>(args.Holder());
+
+		Local<Integer> ret = Integer::New(isolate, obj->length);
+		args.GetReturnValue().Set(ret);
+	}
+
+
+	void LinkedList::GetFirst(Local<String> property, const PropertyCallbackInfo<Value>& args) {
+		Isolate* isolate = args.GetIsolate();
+		HandleScope scope(isolate);
+
+		LinkedList* obj = ObjectWrap::Unwrap<LinkedList>(args.Holder());
+
+		if (obj->length > 0) {
+			Local<Value> ret = Local<Value>::New(isolate, obj->head->value);
+			args.GetReturnValue().Set(ret);
+		}
+	}
+
+	void LinkedList::GetLast(Local<String> property, const PropertyCallbackInfo<Value>& args) {
+		Isolate* isolate = args.GetIsolate();
+		HandleScope scope(isolate);
+
+		LinkedList* obj = ObjectWrap::Unwrap<LinkedList>(args.Holder());
+
+		if (obj->length > 0) {
+			Local<Value> ret = Local<Value>::New(isolate, obj->tail->value);
+			args.GetReturnValue().Set(ret);
+		}
+	}
 }
-
-Handle<Value> LinkedList::New(const Arguments& args) {
-	HandleScope scope;
-	
-	LinkedList* obj = new LinkedList();
-	obj->Wrap(args.This());
-
-	int len = args.Length();
-	for (int i = 0; i < len; i++) {
-		obj->Push(args[i]);		
-	}
-	return args.This();
-}
-
-void LinkedList::Push(const Handle<Value>& value) {
-	
-	Entry* entry = new Entry();
-	entry->value = Persistent<Value>::New(value);
-
-	if (head == nullptr) {
-		head = entry;	
-	}
-	if (tail != nullptr) {
-		tail->next = entry;
-		entry->prev = tail;	
-	}
-	length++;
-	tail = entry;
-}	
-
-Handle<Value> LinkedList::ForEach(const Arguments& args) {
-	HandleScope scope;
-	LinkedList* obj = ObjectWrap::Unwrap<LinkedList>(args.This());
-	
-	if (args.Length() == 0 || !args[0]->IsFunction()) {
-		return Undefined();
-	}
-
-	Local<Object> self = args.This();
-
-	Local<Object> context = (args.Length() > 1) ? Local<Object>::Cast(args[1]) : v8::Context::GetCurrent()->Global();
-	
-	Local<Function> callback = Local<Function>::Cast(args[0]);
-
-	int index = 0;
-	Entry* current = obj->head;
-	while (current != nullptr) {
-		Handle<Value> callbackArgs[3] = {
-			current->value, Integer::New(index++), self
-		};
-		callback->Call(context, 3, callbackArgs);
-		current = current->next;
-	}
-	return Undefined();
-}
-
-
-Handle<Value> LinkedList::AddFirst(const Arguments& args) {
-	HandleScope scope;
-	LinkedList* obj = ObjectWrap::Unwrap<LinkedList>(args.This());
-
-	Entry* entry = new Entry();
-	entry->value = Persistent<Value>::New(args[0]);
-
-	if (obj->tail == nullptr) {
-		obj->tail = entry;	
-	}
-	if (obj->head != nullptr) {
-		obj->head->prev = entry;
-		entry->next = obj->head;	
-	}
-	obj->head = entry;
-	
-	obj->length++;
-
-	return Undefined();
-}
-
-Handle<Value> LinkedList::AddLast(const Arguments& args) {
-	HandleScope scope;
-	LinkedList* obj = ObjectWrap::Unwrap<LinkedList>(args.This());
-	obj->Push(args[0]);
-	return Undefined();
-}
-
-Handle<Value> LinkedList::RemoveFirst(const Arguments& args) {
-	HandleScope scope;
-	LinkedList* obj = ObjectWrap::Unwrap<LinkedList>(args.This());
-
-	Entry* oldHead = obj->head;
-	if (oldHead == nullptr) {
-		return Undefined();
-	}
-		
-	Local<Value> ret = Local<Value>::New(obj->head->value);
-	
-	if (oldHead->next == nullptr) {
-		obj->head = nullptr;
-	} else {
-		obj->head = oldHead->next;
-		obj->head->prev = nullptr;
-	}
-	delete oldHead;
-	
-	obj->length--;
-
-	return scope.Close(ret);
-}
-
-Handle<Value> LinkedList::RemoveLast(const Arguments& args) {
-	HandleScope scope;
-	LinkedList* obj = ObjectWrap::Unwrap<LinkedList>(args.This());
-
-	Entry* oldTail = obj->tail;
-	if (oldTail == nullptr) {
-		return Undefined();
-	}
-		
-	Local<Value> ret = Local<Value>::New(obj->tail->value);
-	
-	if (oldTail->prev == nullptr) {
-		obj->tail = nullptr;
-	} else {
-		obj->tail = oldTail->prev;
-		obj->tail->next = nullptr;
-	}
-	delete oldTail;
-	
-	obj->length--;
-
-	return scope.Close(ret);
-}
-
-Handle<Value> LinkedList::GetLength(Local<String> name, const AccessorInfo& info) {
-	HandleScope scope;
-	LinkedList* obj = ObjectWrap::Unwrap<LinkedList>(info.This());
-	return scope.Close(Integer::New(obj->length));
-}
-
-Handle<Value> LinkedList::GetFirst(Local<String> name, const AccessorInfo& info) {
-	HandleScope scope;
-	LinkedList* obj = ObjectWrap::Unwrap<LinkedList>(info.This());
-	return scope.Close(Local<Value>::New(obj->head->value));
-}
-
-Handle<Value> LinkedList::GetLast(Local<String> name, const AccessorInfo& info) {
-	HandleScope scope;
-	LinkedList* obj = ObjectWrap::Unwrap<LinkedList>(info.This());
-	return scope.Close(Local<Value>::New(obj->tail->value));
-}
-
