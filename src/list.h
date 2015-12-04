@@ -18,7 +18,7 @@ namespace list {
 
 		Entry* next;
 		Entry* prev;
-		v8::UniquePersistent<v8::Value> value;
+		v8::Persistent<v8::Value> value;
 	};
 
 	/**
@@ -34,7 +34,7 @@ namespace list {
 			LinkedList();
 			~LinkedList();
 
-			void Push(v8::Isolate* isolate, v8::Local<v8::Value> value);
+			void Push(v8::Isolate* isolate, const v8::Local<v8::Value>& value);
 
 			/**
 			 * Invoked when LinkedList constructor is called on JS.

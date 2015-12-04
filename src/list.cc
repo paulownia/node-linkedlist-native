@@ -1,26 +1,21 @@
 #include <node.h>
 #include "list.h"
-#include <iostream>
 
 namespace list {
-
-	using v8::Object;
+	using v8::Context;
+	using v8::External;
 	using v8::Function;
-	using v8::Persistent;
+	using v8::FunctionCallbackInfo;
+	using v8::FunctionTemplate;
+	using v8::HandleScope;
+	using v8::Integer;
 	using v8::Isolate;
 	using v8::Local;
-	using v8::FunctionTemplate;
-	using v8::FunctionCallbackInfo;
-	using v8::PropertyCallbackInfo;
-	using v8::Value;
-	using v8::String;
-	using v8::Integer;
-	using v8::HandleScope;
-	using v8::Context;
 	using v8::Null;
-	using v8::Persistent;
-	using v8::UniquePersistent;
-	using v8::External;
+	using v8::Object;
+	using v8::PropertyCallbackInfo;
+	using v8::String;
+	using v8::Value;
 
 	Entry::Entry() {
 		prev = nullptr;
@@ -28,6 +23,7 @@ namespace list {
 	};
 
 	Entry::~Entry() {
+		value.Reset();
 	};
 
 
@@ -47,6 +43,7 @@ namespace list {
 
 	void LinkedList::Init(Local<Object> exports) {
 		Isolate* isolate = exports->GetIsolate();
+		HandleScope scope(isolate);
 
 		Local<FunctionTemplate> tpl = FunctionTemplate::New(isolate, New);
 
@@ -91,7 +88,7 @@ namespace list {
 		}
 	}
 
-	void LinkedList::Push(Isolate* isolate, Local<Value> value) {
+	void LinkedList::Push(Isolate* isolate, const Local<Value>& value) {
 		Entry* entry = new Entry();
 		entry->value.Reset(isolate, value);
 
