@@ -4,9 +4,15 @@
   "description": "A native implementation of linked list for node.js",
   "main": "index.js",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha --require intelli-espower-loader"
   },
   "repository": "https://github.com/paulownia/node-linkedlist.git",
   "author": "hisanori",
-  "license": "BSD"
+  "license": "BSD",
+  "devDependencies": {
+    "espower-loader": "^1.0.0",
+    "intelli-espower-loader": "^1.0.0",
+    "mocha": "^2.3.4",
+    "power-assert": "^1.2.0"
+  }
 }
