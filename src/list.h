@@ -2,91 +2,94 @@
 #define LINKEDLIST_H
 
 #include <node.h>
+#include <node_object_wrap.h>
 
 /*
  * A implementation of linked list.
  */
+namespace list {
 
-/**
- * An Item of linked list.
- */
-struct Entry {
-	Entry();
-	~Entry();
-	
-	Entry* next;
-	Entry* prev;
-	v8::Persistent<v8::Value> value;
-};
+	/**
+	 * An Item of linked list.
+	 */
+	struct Entry {
+		Entry();
+		~Entry();
 
-/**
- * Linked list
- */
-class LinkedList : public node::ObjectWrap {
-	public:
+		Entry* next;
+		Entry* prev;
+		v8::Persistent<v8::Value> value;
+	};
 
-		static void Init(v8::Handle<v8::Object> exports);
+	/**
+	 * Linked list
+	 */
+	class LinkedList : public node::ObjectWrap {
+		public:
 
-	private:
+			static void Init(v8::Local<v8::Object> exports);
 
-		LinkedList();
-		~LinkedList();
+		private:
 
-		void Push(const v8::Handle<v8::Value>& value);
+			LinkedList();
+			~LinkedList();
 
-		/**
-		 * Invoked when LinkedList constructor is called on JS.
-		 */
-		static v8::Handle<v8::Value> New(const v8::Arguments& args);
-		
-		/**
-		 * Invoked when LinkedList#addLast method is called on JS.
-		 */
-		static v8::Handle<v8::Value> AddLast(const v8::Arguments& args);
-		
-		/**
-		 * Invoked when LinkedList#addFirst method is called on JS.
-		 */
-		static v8::Handle<v8::Value> AddFirst(const v8::Arguments& args);
-		
-		/**
-		 * Invoked when LinkedList#removeLast method is called on JS.
-		 */
-		static v8::Handle<v8::Value> RemoveLast(const v8::Arguments& args);
-		
-		/**
-		 * Invoked when LinkedList#removeFirst method is called on JS.
-		 */
-		static v8::Handle<v8::Value> RemoveFirst(const v8::Arguments& args);
-		
-		/**
-		 * Invoked when you read length property on JS.
-		 */
-		static v8::Handle<v8::Value> GetLength(v8::Local<v8::String> name,  const v8::AccessorInfo& info);
-		
-		/**
-		 * Invoked when you read first property on JS.
-		 */
-		static v8::Handle<v8::Value> GetFirst(v8::Local<v8::String> name,  const v8::AccessorInfo& info);
-		
-		/**
-		 * Invoked when you read last property on JS.
-		 */
-		static v8::Handle<v8::Value> GetLast(v8::Local<v8::String> name,  const v8::AccessorInfo& info);
+			void Push(v8::Isolate* isolate, const v8::Local<v8::Value>& value);
 
-		/**
-		 * forEach
-		 */
-		static v8::Handle<v8::Value> ForEach(const v8::Arguments& args);
-		
-		/** First Item of the list */
-		Entry* head;
+			/**
+			 * Invoked when LinkedList constructor is called on JS.
+			 */
+			static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
 
-		/** Last Item of the list */
-		Entry* tail;
+			/**
+			 * Invoked when LinkedList#addLast method is called on JS.
+			 */
+			static void AddLast(const v8::FunctionCallbackInfo<v8::Value>& args);
 
-		/** Size of the list */
-		int length;
-};
+			/**
+			 * Invoked when LinkedList#addFirst method is called on JS.
+			 */
+			static void AddFirst(const v8::FunctionCallbackInfo<v8::Value>& args);
+
+			/**
+			 * Invoked when LinkedList#removeLast method is called on JS.
+			 */
+			static void RemoveLast(const v8::FunctionCallbackInfo<v8::Value>& args);
+
+			/**
+			 * Invoked when LinkedList#removeFirst method is called on JS.
+			 */
+			static void RemoveFirst(const v8::FunctionCallbackInfo<v8::Value>& args);
+
+			/**
+			 * Invoked when you read length property on JS.
+			 */
+			static void GetLength(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& args);
+
+			/**
+			 * Invoked when you read first property on JS.
+			 */
+			static void GetFirst(v8::Local<v8::String> property,  const v8::PropertyCallbackInfo<v8::Value>& args);
+
+			/**
+			 * Invoked when you read last property on JS.
+			 */
+			static void GetLast(v8::Local<v8::String> property,  const v8::PropertyCallbackInfo<v8::Value>& args);
+
+			/**
+			 * forEach
+			 */
+			static void ForEach(const v8::FunctionCallbackInfo<v8::Value>& args);
+
+			/** First Item of the list */
+			Entry* head;
+
+			/** Last Item of the list */
+			Entry* tail;
+
+			/** Size of the list */
+			int length;
+	};
+}
 
 #endif
